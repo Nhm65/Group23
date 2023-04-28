@@ -1,0 +1,186 @@
+import os
+import sys
+import mysql.connector
+from ViewInventory import *
+
+
+class Cart:
+    def viewCart():
+        try:
+            # Initial Variables
+            sel = '5'
+            men = False
+            totalP = 0.00
+            
+            #initial info gather
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+            cursor = connection.cursor()
+            query = "SELECT * FROM Cart"
+            cursor.execute(query)
+            records = cursor.fetchall()
+            
+            # Cart
+            print("\nYour Cart: ")
+            print("\n===========================================")
+            for row in records:
+                print('\n' + row[0] + "\t" + row[2])
+                totalP = totalP + row[2]
+            
+            print("\nTotal: $" + totalP)
+            print("\n===========================================")
+            
+            # Menu
+            men = True
+            
+            while men:
+                print("""
+                \n1. Go Back
+                \n2. Remove an item
+                \n3. Checkout
+                \n-------------------
+                """)
+                sel = input("\nSelect an Option: ")
+                if sel == '1':
+                    # Go back to inventory
+
+                    Inventory.displayMenu()
+
+                elif sel == '2':
+                    ite = input("\nWhich Item Would You Like To Remove: ")
+                    Cart.removeItem(ite)
+                    men = False
+
+                elif sel == '3':
+                    Cart.checkout()
+                    men = False
+                    
+
+
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+        
+
+    def addItem(item, qnty, price):
+        
+        qnty = 1
+
+        try:
+            print('\nAdding Item...\n')
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+            cursor = connection.cursor()
+            query = "INSERT INTO Cart (Item, Quantity, Price) VALUES (%s, %s)"
+            data = (item, qnty, price)
+            cursor.execute(query, data)
+            connection.commit
+            print('\nItem Added.\n')
+
+            # Close
+            cursor.close()
+            connection.close()
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+
+    def removeItem(item):
+        try:
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+            print("\nRemoving Item...\n")
+            cursor = connection.cursor()
+            query = "DELETE FROM Cart WHERE Item = (%s)"
+            data = item
+            cursor.execute(query, data)
+            connection.commit()
+            print("\nItem Removed.\n")
+
+            # return to cart
+            Cart.viewCart()
+            
+            # Close
+            cursor.close()
+            connection.close()
+
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+
+    def checkout():
+        totalPrice = 0.00
+        
+        try:
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+
+            #add up total price
+            cursor = connection.cursor()
+            query1 = "SELECT * FROM Cart"
+            cursor.execute(query1)
+            records = cursor.fetchall()
+            for row in records:
+                totalPrice = totalPrice + row[2]
+
+
+            cursor.close()
+            connection.close()
+
+            #remove quantities in cart from inventory    
+            
+            query2 = "SELECT Item FROM Inventory"
+            cursor.execute(query2)
+            invRec = cursor.fetchall()
+            for row in records:
+                Cart.updateInventory(row)
+
+
+
+
+
+
+            
+
+            cursor.close()
+            connection.close()
+
+            #clear cart
+            query4 = "DELETE FROM Cart;"
+            cursor.execute(query4)
+            connection.commit
+
+            ###########################################
+            ### NEED WAY TO SEND DATA TO ORDER HISTORY
+            ###########################################
+
+            # confirmation message
+
+            print("\nThe items in your cart have been ordered and $" + totalPrice + " has been charged to your account.")
+
+            # Close
+            cursor.close()
+            connection.close()
+
+            # Go back to Inventory
+
+            Inventory.displayMenu()
+
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+    def updateInventory(item):
+        try:
+
+            connection = mysql.connector.connect(host='localhost', database='Inventory', user='root', password='')
+            cursor = connection.cursor()
+            queryQ = "SELECT Quantity FROM Invetory WHERE ItemName = %s"
+            cursor.execute(queryQ, item)
+            quan = cursor.fetchone()
+            qUpdate = quan - 1
+            queryQuan = "UPDATE Inventory SET Quantity='%s' WHERE ItemName='%d'"
+            cursor.execute(queryQuan, qUpdate, item)
+            connection.commit()
+
+
+            cursor.close()
+            connection.close()
+
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
