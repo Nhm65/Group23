@@ -1,0 +1,81 @@
+import os
+import sys
+import mysql.connector
+
+class Cart:
+    def viewCart():
+        try:
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+            cursor = connection.cursor()
+            query = "SELECT * FROM Cart"
+            cursor.execute(query)
+            records = cursor.fetchall()
+            print("\nYour Cart: ")
+            for row in records:
+                print('\n' + row[0] + "\t" + row[2])
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+        
+
+    def addItem(item, qnty, price):
+        
+        qnty = 1
+
+        try:
+            print('\nAdding Item...\n')
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+            cursor = connection.cursor()
+            query = "INSERT INTO Cart (Item, Quantity, Price) VALUES (%s, %s)"
+            data = (item, qnty, price)
+            cursor.execute(query, data)
+            connection.commit
+            print('\nItem Added.\n')
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+
+    def removeItem(item):
+        try:
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+            print("\nRemoving Item...\n")
+            cursor = connection.cursor()
+            query = "DELETE FROM Cart WHERE Item = (%s)"
+            data = item
+            cursor.execute(query, data)
+            connection.commit
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
+
+    def checkout():
+        totalPrice = 0.00
+        rowCount = 0
+        try:
+            connection = mysql.connector.connect(host='localhost', database='Cart', user='root', password='')
+
+            #add up total price
+            cursor = connection.cursor()
+            query = "SELECT Price FROM Cart"
+            cursor.execute(query)
+            records = cursor.fetchall()
+            for row in records:
+                totalPrice = totalPrice + row
+            
+            rowCount = cursor.rowcount()
+
+            
+            
+
+        #remove quantities in cart from inventory
+
+            #clear cart
+            query = "DELETE FROM Cart;"
+            cursor.execute(query)
+            connection.commit
+
+            print("\nThe items in your cart have been ordered and " + totalPrice + " has been charged to your account.")
+
+        except:
+            print("\nConnection failed\n")
+            sys.exit()
